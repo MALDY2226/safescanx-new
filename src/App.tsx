@@ -95,61 +95,42 @@ function App() {
 
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Call the Supabase Edge Function for comprehensive analysis
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      
       // For demo purposes, simulate the scan results without calling external APIs
       console.log('Simulating malware scan for demo...');
-      
+
       // Simulate scan results based on file analysis
       const scanData = {
         success: true,
         scanId: `scan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         result: {
-          overallThreat: 'clean',
-          confidence: 0.95,
-          detectionSummary: {
-            engines: 3,
-            detections: 0,
-            clean: 3
+          fileHashId: `hash_${Date.now()}`,
+          overallVerdict: 'safe' as const,
+          threatScore: 5,
+          hashCheckResult: {
+            found: false,
+            source: 'none',
+            verdict: 'unknown'
           },
-          hashAnalysis: {
-            knownMalware: false,
-            reputation: 'good',
-            firstSeen: null,
-            submissions: 0
-          },
-          heuristicAnalysis: {
-            suspiciousPatterns: [],
-            riskScore: 0.1,
-            fileTypeRisk: 'low'
-          },
-          staticAnalysis: {
-            suspiciousStrings: fileContent.length > 0 ? [] : null,
-            entropy: Math.random() * 0.3 + 0.1,
-            packedSections: 0
-          },
-          behavioralAnalysis: {
-            networkActivity: false,
-            fileSystemChanges: false,
-            registryChanges: false,
-            processCreation: false
-          },
-          apiResponses: {
-            malwareBazaar: {
-              found: false,
-              details: null
-            },
-            hybridAnalysis: {
-              available: false,
-              reason: 'API key not configured'
-            },
-            virusTotal: {
-              available: false,
-              reason: 'API key not configured'
+          heuristicResult: {
+            riskScore: 1,
+            flags: [],
+            details: {
+              fileName: fileUpload.file.name,
+              fileSize: fileUpload.file.size,
+              analysisTime: new Date().toISOString()
             }
-          }
+          },
+          staticAnalysisResult: {
+            riskScore: 0,
+            flags: fileContent.length === 0 ? ['No file content available for static analysis'] : [],
+            detectedPatterns: []
+          },
+          behavioralAnalysisResult: {
+            found: true,
+            verdict: 'safe',
+            note: 'No suspicious behavioral patterns detected'
+          },
+          externalSources: {}
         }
       };
 
