@@ -4,12 +4,15 @@ import type { ScanProgress } from '../types/scan';
 
 interface ScanProgressProps {
   progress: ScanProgress;
-  fileName: string;
+  fileName?: string;
   sha256Hash?: string;
+  url?: string;
 }
 
-export default function ScanProgress({ progress, fileName, sha256Hash }: ScanProgressProps) {
-  const stages = [
+export default function ScanProgress({ progress, fileName, sha256Hash, url }: ScanProgressProps) {
+  const isURLScan = !!url;
+
+  const fileStages = [
     { id: 'uploading', label: 'Uploading File', icon: Shield },
     { id: 'hashing', label: 'Generating Hash', icon: Hash },
     { id: 'hash-check', label: 'Hash Database Check', icon: Search },
@@ -18,6 +21,14 @@ export default function ScanProgress({ progress, fileName, sha256Hash }: ScanPro
     { id: 'behavioral', label: 'Behavioral Analysis', icon: Activity },
     { id: 'complete', label: 'Analysis Complete', icon: CheckCircle }
   ];
+
+  const urlStages = [
+    { id: 'hash-check', label: 'Database Check', icon: Search },
+    { id: 'behavioral', label: 'VirusTotal Scan', icon: Activity },
+    { id: 'complete', label: 'Analysis Complete', icon: CheckCircle }
+  ];
+
+  const stages = isURLScan ? urlStages : fileStages;
 
   const getCurrentStageIndex = () => {
     return stages.findIndex(stage => stage.id === progress.stage);
@@ -30,8 +41,10 @@ export default function ScanProgress({ progress, fileName, sha256Hash }: ScanPro
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-semibold text-gray-900">Scanning: {fileName}</h3>
-            {sha256Hash && (
+            <h3 className="text-xl font-semibold text-gray-900">
+              {isURLScan ? 'Scanning URL' : 'Scanning File'}: {isURLScan ? url : fileName}
+            </h3>
+            {sha256Hash && !isURLScan && (
               <p className="text-sm text-gray-500 font-mono mt-1">
                 SHA-256: {sha256Hash}
               </p>

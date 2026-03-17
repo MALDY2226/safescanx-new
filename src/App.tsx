@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import FileUpload from './components/FileUpload';
+import URLInput from './components/URLInput';
 import ScanProgress from './components/ScanProgress';
 import ScanResults from './components/ScanResults';
 import { readFileAsText } from './utils/fileUtils';
-import type { FileUpload as FileUploadType, ScanProgress as ScanProgressType, CompleteScanData } from './types/scan';
+import type { FileUpload as FileUploadType, URLInput as URLInputType, ScanProgress as ScanProgressType, CompleteScanData } from './types/scan';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -16,6 +17,7 @@ type AppState = 'upload' | 'scanning' | 'results';
 function App() {
   const [appState, setAppState] = useState<AppState>('upload');
   const [currentFile, setCurrentFile] = useState<FileUploadType | null>(null);
+  const [currentURL, setCurrentURL] = useState<string | null>(null);
   const [scanProgress, setScanProgress] = useState<ScanProgressType>({
     stage: 'uploading',
     progress: 0,
@@ -25,15 +27,24 @@ function App() {
 
   const handleFileSelect = async (fileUpload: FileUploadType) => {
     setCurrentFile(fileUpload);
+    setCurrentURL(null);
     setAppState('scanning');
-    
+
     // Start scanning process
-    await performScan(fileUpload);
+    await performFileScan(fileUpload);
   };
 
-  const performScan = async (fileUpload: FileUploadType) => {
+  const handleURLSubmit = async (urlInput: URLInputType) => {
+    setCurrentURL(urlInput.url);
+    setCurrentFile(null);
+    setAppState('scanning');
+
+    // Start URL scanning process
+    await performURLScan(urlInput.url);
+  };
+
+  const performFileScan = async (fileUpload: FileUploadType) => {
     try {
-      // Stage 1: Uploading (already done)
       setScanProgress({
         stage: 'uploading',
         progress: 10,
@@ -42,7 +53,6 @@ function App() {
 
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Stage 2: Hashing (already done during file selection)
       setScanProgress({
         stage: 'hashing',
         progress: 20,
@@ -51,7 +61,6 @@ function App() {
 
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Read file content for static analysis
       let fileContent = '';
       try {
         fileContent = await readFileAsText(fileUpload.file);
@@ -59,7 +68,6 @@ function App() {
         console.log('Could not read file as text, continuing without content analysis');
       }
 
-      // Stage 3: Hash Check
       setScanProgress({
         stage: 'hash-check',
         progress: 30,
@@ -68,7 +76,6 @@ function App() {
 
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Stage 4: Heuristic Analysis
       setScanProgress({
         stage: 'heuristic',
         progress: 50,
@@ -77,7 +84,6 @@ function App() {
 
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Stage 5: Static Analysis
       setScanProgress({
         stage: 'static',
         progress: 70,
@@ -86,7 +92,6 @@ function App() {
 
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Stage 6: Behavioral Analysis
       setScanProgress({
         stage: 'behavioral',
         progress: 85,
@@ -95,10 +100,8 @@ function App() {
 
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // For demo purposes, simulate the scan results without calling external APIs
       console.log('Simulating malware scan for demo...');
 
-      // Simulate scan results based on file analysis
       const scanData = {
         success: true,
         scanId: `scan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -134,7 +137,6 @@ function App() {
         }
       };
 
-      // Stage 7: Complete
       setScanProgress({
         stage: 'complete',
         progress: 100,
@@ -143,12 +145,12 @@ function App() {
 
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Prepare complete scan data
       const completeScanData: CompleteScanData = {
         scanId: scanData.scanId,
         fileName: fileUpload.file.name,
         fileSize: fileUpload.file.size,
         sha256Hash: fileUpload.sha256Hash,
+        scanType: 'file',
         scanTimestamp: new Date().toISOString(),
         result: scanData.result
       };
@@ -166,8 +168,74 @@ function App() {
     }
   };
 
+  const performURLScan = async (url: string) => {
+    try {
+      setScanProgress({
+        stage: 'hash-check',
+        progress: 20,
+        message: 'Checking URL against threat databases...'
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      setScanProgress({
+        stage: 'behavioral',
+        progress: 60,
+        message: 'Querying VirusTotal for threat intelligence...'
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      console.log('Simulating URL scan for demo...');
+
+      const scanData = {
+        success: true,
+        scanId: `scan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        result: {
+          overallVerdict: 'safe' as const,
+          threatScore: 0,
+          urlCheckResult: {
+            found: false,
+            detections: 0,
+            categories: [],
+            verdict: 'clean'
+          },
+          externalSources: {}
+        }
+      };
+
+      setScanProgress({
+        stage: 'complete',
+        progress: 100,
+        message: 'Analysis complete!'
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const completeScanData: CompleteScanData = {
+        scanId: scanData.scanId,
+        url: url,
+        scanType: 'url',
+        scanTimestamp: new Date().toISOString(),
+        result: scanData.result
+      };
+
+      setScanResults(completeScanData);
+      setAppState('results');
+
+    } catch (error) {
+      console.error('URL scan error:', error);
+      setScanProgress({
+        stage: 'error',
+        progress: 0,
+        message: error instanceof Error ? error.message : 'An error occurred during URL scanning'
+      });
+    }
+  };
+
   const handleNewScan = () => {
     setCurrentFile(null);
+    setCurrentURL(null);
     setScanResults(null);
     setScanProgress({
       stage: 'uploading',
@@ -215,17 +283,32 @@ function App() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {appState === 'upload' && (
-          <FileUpload 
-            onFileSelect={handleFileSelect}
-            isScanning={false}
-          />
+          <div className="space-y-8">
+            <FileUpload
+              onFileSelect={handleFileSelect}
+              isScanning={false}
+            />
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-gray-50 text-gray-500 font-medium">OR</span>
+              </div>
+            </div>
+            <URLInput
+              onURLSubmit={handleURLSubmit}
+              isScanning={false}
+            />
+          </div>
         )}
 
-        {appState === 'scanning' && currentFile && (
+        {appState === 'scanning' && (
           <ScanProgress
             progress={scanProgress}
-            fileName={currentFile.file.name}
-            sha256Hash={currentFile.sha256Hash}
+            fileName={currentFile?.file.name}
+            sha256Hash={currentFile?.sha256Hash}
+            url={currentURL}
           />
         )}
 

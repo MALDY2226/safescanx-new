@@ -4,8 +4,12 @@ export interface FileUpload {
   uploadProgress: number;
 }
 
+export interface URLInput {
+  url: string;
+}
+
 export interface ScanProgress {
-  stage: 'uploading' | 'hashing' | 'hash-check' | 'heuristic' | 'static' | 'behavioral' | 'complete' | 'error';
+  stage: 'uploading' | 'hashing' | 'hash-check' | 'heuristic' | 'static' | 'behavioral' | 'url-check' | 'complete' | 'error';
   progress: number;
   message: string;
 }
@@ -49,22 +53,39 @@ export interface BehavioralAnalysisResult {
   error?: string;
 }
 
+export interface URLCheckResult {
+  found: boolean;
+  detections: number;
+  categories: string[];
+  verdict: string;
+  lastAnalysisDate?: string;
+  analysisStats?: {
+    malicious: number;
+    suspicious: number;
+    undetected: number;
+    harmless: number;
+  };
+}
+
 export interface ScanResult {
-  fileHashId: string;
+  fileHashId?: string;
   overallVerdict: 'safe' | 'suspicious' | 'malicious' | 'critical';
   threatScore: number;
-  hashCheckResult: HashCheckResult;
-  heuristicResult: HeuristicResult;
-  staticAnalysisResult: StaticAnalysisResult;
-  behavioralAnalysisResult: BehavioralAnalysisResult;
+  hashCheckResult?: HashCheckResult;
+  heuristicResult?: HeuristicResult;
+  staticAnalysisResult?: StaticAnalysisResult;
+  behavioralAnalysisResult?: BehavioralAnalysisResult;
+  urlCheckResult?: URLCheckResult;
   externalSources: any;
 }
 
 export interface CompleteScanData {
   scanId: string;
-  fileName: string;
-  fileSize: number;
-  sha256Hash: string;
+  fileName?: string;
+  fileSize?: number;
+  sha256Hash?: string;
+  url?: string;
+  scanType: 'file' | 'url';
   scanTimestamp: string;
   result: ScanResult;
 }
